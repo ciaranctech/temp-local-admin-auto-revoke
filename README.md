@@ -48,9 +48,25 @@ Inside the script:
 ```bash
 DEFAULT_ELEVATION_MINUTES=10
 MAX_ELEVATION_MINUTES=120
+COOLDOWN_MINUTES=5
 ```
 
-You can tune both values to your policy requirements.
+You can tune these values to your policy requirements.
+
+## v1.1 Enhancements
+
+- Request ID generation per elevation event
+- Root-owned state tracking under:
+  - `/Library/Application Support/temp-local-admin-auto-revoke/state/`
+- Cooldown window enforcement after revoke
+- Optional ticket/justification capture (Jamf `$5`)
+- Reconcile mode for stale grant cleanup:
+
+```bash
+RECONCILE_ONLY=1 /path/to/temp-local-admin-auto-revoke.sh
+```
+
+- Unified log marker entries via `logger -t temp-local-admin-auto-revoke`
 
 ## Safety Controls
 
@@ -94,13 +110,15 @@ Validate input → Grant admin → Create LaunchDaemon revoke job → Timer expi
 
 ## VM Testing Performed
 
-Validated in dedicated macOS test VM with separate test user:
+Validated in dedicated macOS test VM with separate non-admin test user (`vmtestuser`):
 
-1. Confirmed target test user starts as standard.
-2. Ran script for 1-minute elevation.
-3. Confirmed user became admin immediately.
-4. Waited for auto-revoke window.
-5. Confirmed user reverted to standard automatically.
+1. Confirmed test user starts as standard.
+2. Ran script with 1-minute elevation + justification (`CHG-12345`).
+3. Confirmed immediate admin grant.
+4. Confirmed auto-revoke after timer.
+5. Confirmed cleanup of helper script and LaunchDaemon plist.
+6. Confirmed state/cooldown file creation.
+7. Re-ran within cooldown window and confirmed script safely blocked re-grant.
 
 ## Security Considerations
 
@@ -114,6 +132,7 @@ Validated in dedicated macOS test VM with separate test user:
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2026-03-06 | Initial release |
+| 1.1 | 2026-03-06 | Added state tracking, cooldown, reconcile mode, request IDs, and justification support |
 
 ## Author
 
